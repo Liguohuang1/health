@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康监测 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .alert-high {
+            border-left: 4px solid #EF4444;
+            background: linear-gradient(90deg, #FEF2F2 0%, #FFFFFF 100%);
+        }
+        .alert-medium {
+            border-left: 4px solid #F59E0B;
+            background: linear-gradient(90deg, #FFFBEB 0%, #FFFFFF 100%);
+        }
+        .alert-low {
+            border-left: 4px solid #10B981;
+            background: linear-gradient(90deg, #F0FDF4 0%, #FFFFFF 100%);
+        }
+        .trend-card {
+            transition: transform 0.3s ease;
+        }
+        .trend-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">健康监测</h1>
+        <button onclick="refreshData()" class="text-blue-600">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <!-- 监测概览 -->
+    <div class="px-6 py-4">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h2 class="text-lg font-semibold">30天监测概览</h2>
+                    <p class="text-sm opacity-90">最近30天健康数据趋势分析</p>
+                </div>
+                <i class="fas fa-chart-line text-2xl opacity-80"></i>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="normalDays">22</div>
+                    <div class="text-sm opacity-90">正常天数</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="warningDays">6</div>
+                    <div class="text-sm opacity-90">预警天数</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="alertDays">2</div>
+                    <div class="text-sm opacity-90">警报天数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 趋势图表 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">血压趋势图</h3>
+            <div class="h-48">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活跃提醒 -->
+    <div class="px-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">活跃提醒</h3>
+        <div class="space-y-3" id="activeAlerts">
+            <!-- 活跃提醒将动态加载 -->
+        </div>
+    </div>
+
+    <!-- 下一步行动建议 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-tasks mr-2 text-green-600"></i>下一步行动建议
+            </h3>
+            <div class="space-y-3" id="nextActions">
+                <!-- 行动建议将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史提醒 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">历史提醒</h3>
+                <button onclick="toggleHistory()" class="text-blue-600 text-sm">
+                    <span id="historyToggleText">展开</span>
+                    <i class="fas fa-chevron-down ml-1" id="historyToggleIcon"></i>
+                </button>
+            </div>
+            <div class="space-y-3" id="historyAlerts" style="display: none;">
+                <!-- 历史提醒将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 监测设置 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-cog mr-2 text-gray-600"></i>监测设置
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-medium text-gray-800">血压异常提醒</div>
+                        <div class="text-sm text-gray-600">当血压超出目标范围时提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-medium text-gray-800">风险变化提醒</div>
+                        <div class="text-sm text-gray-600">痴呆风险显著变化时提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-medium text-gray-800">复查提醒</div>
+                        <div class="text-sm text-gray-600">定期复查时间提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+
+    <script>
+        let trendChart;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTrendsData();
+            initTrendChart();
+        });
+
+        // 加载趋势数据
+        async function loadTrendsData() {
+            try {
+                const response = await fetch('./assets/sample-trends.json');
+                const data = await response.json();
+                
+                updateOverview(data);
+                updateActiveAlerts(data.alerts);
+                updateNextActions(data.next_actions);
+                updateTrendChart(data.trends_30_days);
+                
+            } catch (error) {
+                console.error('Error loading trends data:', error);
+                showMockData();
+            }
+        }
+
+        // 显示模拟数据
+        function showMockData() {
+            // 更新概览
+            document.getElementById('normalDays').textContent = '22';
+            document.getElementById('warningDays').textContent = '6';
+            document.getElementById('alertDays').textContent = '2';
+            
+            // 模拟活跃提醒
+            const mockAlerts = [
+                {
+                    id: 'alert_001',
+                    type: 'high_bp',
+                    severity: 'high',
+                    message: '血压持续偏高，建议及时就医',
+                    date: '2024-01-15',
+                    resolved: false
+                },
+                {
+                    id: 'alert_002',
+                    type: 'variability',
+                    severity: 'medium',
+                    message: '血压变异性增加，注意监测',
+                    date: '2024-01-22',
+                    resolved: false
+                }
+            ];
+            
+            updateActiveAlerts(mockAlerts);
+            
+            // 模拟行动建议
+            const mockActions = [
+                '建议3天内复查血压',
+                '考虑调整降压药物剂量',
+                '加强生活方式干预'
+            ];
+            
+            updateNextActions(mockActions);
+        }
+
+        // 更新概览
+        function updateOverview(data) {
+            const trends = data.trends_30_days;
+            const normalDays = trends.filter(t => t.status === 'normal').length;
+            const warningDays = trends.filter(t => t.status === 'warning').length;
+            const alertDays = trends.filter(t => t.status === 'alert').length;
+            
+            document.getElementById('normalDays').textContent = normalDays;
+            document.getElementById('warningDays').textContent = warningDays;
+            document.getElementById('alertDays').textContent = alertDays;
+        }
+
+        // 更新活跃提醒
+        function updateActiveAlerts(alerts) {
+            const container = document.getElementById('activeAlerts');
+            container.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `p-4 rounded-xl border ${getAlertClass(alert.severity)}`;
+                
+                const icon = getAlertIcon(alert.type);
+                const severityText = getSeverityText(alert.severity);
+                
+                alertDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas ${icon} text-xl ${getAlertIconColor(alert.severity)}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-medium text-gray-800">${severityText}</span>
+                                <span class="text-xs text-gray-500">${formatDate(alert.date)}</span>
+                            </div>
+                            <p class="text-sm text-gray-700 mb-2">${alert.message}</p>
+                            <div class="flex space-x-2">
+                                <button onclick="markAsResolved('${alert.id}')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+                                    标记已处理
+                                </button>
+                                <button onclick="viewDetails('${alert.id}')" class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                                    查看详情
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(alertDiv);
+            });
+        }
+
+        // 更新下一步行动
+        function updateNextActions(actions) {
+            const container = document.getElementById('nextActions');
+            container.innerHTML = '';
+            
+            actions.forEach((action, index) => {
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg';
+                actionDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-sm font-bold text-green-600">${index + 1}</span>
+                    </div>
+                    <span class="text-sm text-gray-700">${action}</span>
+                `;
+                container.appendChild(actionDiv);
+            });
+        }
+
+        // 更新趋势图表
+        function updateTrendChart(trends) {
+            if (!trendChart) return;
+            
+            const labels = trends.map(t => {
+                const date = new Date(t.date);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+            
+            const sbpData = trends.map(t => t.sbp);
+            const dbpData = trends.map(t => t.dbp);
+            const statusData = trends.map(t => t.status);
+            
+            // 创建状态颜色数组
+            const pointColors = statusData.map(status => {
+                switch(status) {
+                    case 'normal': return '#10B981';
+                    case 'warning': return '#F59E0B';
+                    case 'alert': return '#EF4444';
+                    default: return '#6B7280';
+                }
+            });
+            
+            trendChart.data.labels = labels;
+            trendChart.data.datasets[0].data = sbpData;
+            trendChart.data.datasets[1].data = dbpData;
+            trendChart.data.datasets[0].pointBackgroundColor = pointColors;
+            trendChart.data.datasets[1].pointBackgroundColor = pointColors;
+            trendChart.update();
+        }
+
+        // 初始化趋势图表
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '收缩压 (SBP)',
+                            data: [],
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '舒张压 (DBP)',
+                            data: [],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 200,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' mmHg';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 获取提醒样式类
+        function getAlertClass(severity) {
+            switch(severity) {
+                case 'high': return 'alert-high';
+                case 'medium': return 'alert-medium';
+                case 'low': return 'alert-low';
+                default: return 'alert-low';
+            }
+        }
+
+        // 获取提醒图标
+        function getAlertIcon(type) {
+            switch(type) {
+                case 'high_bp': return 'fa-heart-pulse';
+                case 'variability': return 'fa-chart-line';
+                case 'risk': return 'fa-exclamation-triangle';
+                default: return 'fa-bell';
+            }
+        }
+
+        // 获取提醒图标颜色
+        function getAlertIconColor(severity) {
+            switch(severity) {
+                case 'high': return 'text-red-600';
+                case 'medium': return 'text-yellow-600';
+                case 'low': return 'text-green-600';
+                default: return 'text-gray-600';
+            }
+        }
+
+        // 获取严重程度文本
+        function getSeverityText(severity) {
+            switch(severity) {
+                case 'high': return '高风险';
+                case 'medium': return '中等风险';
+                case 'low': return '低风险';
+                default: return '提醒';
+            }
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        // 标记为已处理
+        function markAsResolved(alertId) {
+            // 这里可以添加标记为已处理的逻辑
+            console.log('Marking alert as resolved:', alertId);
+            // 重新加载数据
+            loadTrendsData();
+        }
+
+        // 查看详情
+        function viewDetails(alertId) {
+            console.log('Viewing alert details:', alertId);
+            // 这里可以添加查看详情的逻辑
+        }
+
+        // 切换历史记录
+        function toggleHistory() {
+            const historyDiv = document.getElementById('historyAlerts');
+            const toggleText = document.getElementById('historyToggleText');
+            const toggleIcon = document.getElementById('historyToggleIcon');
+            
+            if (historyDiv.style.display === 'none') {
+                historyDiv.style.display = 'block';
+                toggleText.textContent = '收起';
+                toggleIcon.className = 'fas fa-chevron-up ml-1';
+            } else {
+                historyDiv.style.display = 'none';
+                toggleText.textContent = '展开';
+                toggleIcon.className = 'fas fa-chevron-down ml-1';
+            }
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadTrendsData();
+        }
+    </script>
+</body>
+</html>

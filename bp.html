@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血压管理 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .bp-target {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+        .bp-input-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .bp-input-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            width: 400px;
+        }
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">血压管理</h1>
+        <button onclick="showBPInput()" class="text-blue-600">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- 血压目标区间 -->
+    <div class="px-6 py-4">
+        <div class="bp-target text-white rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h2 class="text-lg font-semibold">个性化血压目标</h2>
+                    <p class="text-sm opacity-90">基于您的风险特征优化</p>
+                </div>
+                <i class="fas fa-target text-2xl opacity-80"></i>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                    <div class="text-sm opacity-90">收缩压 (SBP)</div>
+                    <div class="text-2xl font-bold" id="sbpTarget">118-128</div>
+                    <div class="text-xs opacity-75">mmHg</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                    <div class="text-sm opacity-90">舒张压 (DBP)</div>
+                    <div class="text-2xl font-bold" id="dbpTarget">68-74</div>
+                    <div class="text-xs opacity-75">mmHg</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 血压统计 -->
+    <div class="px-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">血压统计</h3>
+        <div class="grid grid-cols-3 gap-4">
+            <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="avgSBP">125</div>
+                <div class="text-sm text-gray-600">平均SBP</div>
+            </div>
+            <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-green-600" id="avgDBP">78</div>
+                <div class="text-sm text-gray-600">平均DBP</div>
+            </div>
+            <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="variability">12%</div>
+                <div class="text-sm text-gray-600">变异性</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 血压轨迹图 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">血压轨迹</h3>
+                <div class="flex space-x-2">
+                    <button onclick="setChartPeriod('7d')" class="chart-period-btn px-3 py-1 text-xs rounded-full bg-blue-600 text-white" data-period="7d">7天</button>
+                    <button onclick="setChartPeriod('30d')" class="chart-period-btn px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-600" data-period="30d">30天</button>
+                    <button onclick="setChartPeriod('90d')" class="chart-period-btn px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-600" data-period="90d">90天</button>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="bpChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 血压变异性分析 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">变异性分析</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="text-lg font-bold text-purple-600" id="sdValue">8.5</div>
+                    <div class="text-sm text-gray-600">标准差 (SD)</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="text-lg font-bold text-indigo-600" id="cvValue">6.8%</div>
+                    <div class="text-sm text-gray-600">变异系数 (CV)</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="text-lg font-bold text-pink-600" id="vimValue">2.1</div>
+                    <div class="text-sm text-gray-600">变异独立均值 (VIM)</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="text-lg font-bold text-teal-600" id="arValue">0.15</div>
+                    <div class="text-sm text-gray-600">自回归系数 (AR)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近记录 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">最近记录</h3>
+                <button onclick="showBPInput()" class="text-blue-600 text-sm">
+                    <i class="fas fa-plus mr-1"></i>添加记录
+                </button>
+            </div>
+            <div class="space-y-3" id="recentRecords">
+                <!-- 最近记录将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 血压输入模态框 -->
+    <div id="bpInputModal" class="bp-input-modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">添加血压记录</h3>
+                <button onclick="hideBPInput()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">测量日期</label>
+                    <input type="date" id="bpDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">收缩压 (SBP)</label>
+                        <input type="number" id="bpSBP" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="120" min="50" max="250">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">舒张压 (DBP)</label>
+                        <input type="number" id="bpDBP" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="80" min="30" max="150">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">测量时间</label>
+                    <select id="bpTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="morning">早晨</option>
+                        <option value="afternoon">下午</option>
+                        <option value="evening">晚上</option>
+                        <option value="night">夜间</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">备注</label>
+                    <textarea id="bpNote" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3" placeholder="可选：记录测量时的状态或特殊情况"></textarea>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex space-x-3">
+                <button onclick="hideBPInput()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium">
+                    取消
+                </button>
+                <button onclick="saveBPRecord()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">
+                    保存记录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+
+    <script>
+        let bpChart;
+        let currentPeriod = '7d';
+        let bpRecords = [];
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBPData();
+            initBPChart();
+            loadRecentRecords();
+            setTodayDate();
+        });
+
+        // 设置今天的日期
+        function setTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('bpDate').value = today;
+        }
+
+        // 加载血压数据
+        async function loadBPData() {
+            try {
+                const response = await fetch('./assets/sample-ite.json');
+                const data = await response.json();
+                
+                // 更新血压目标
+                document.getElementById('sbpTarget').textContent = `${data.bp_target.sbp_low}-${data.bp_target.sbp_high}`;
+                document.getElementById('dbpTarget').textContent = `${data.bp_target.dbp_low}-${data.bp_target.dbp_high}`;
+                
+            } catch (error) {
+                console.error('Error loading BP data:', error);
+                // 使用默认值
+                document.getElementById('sbpTarget').textContent = '118-128';
+                document.getElementById('dbpTarget').textContent = '68-74';
+            }
+            
+            // 加载血压记录
+            loadBPRecords();
+        }
+
+        // 加载血压记录
+        function loadBPRecords() {
+            const savedRecords = localStorage.getItem('bpRecords');
+            if (savedRecords) {
+                bpRecords = JSON.parse(savedRecords);
+            } else {
+                // 生成模拟数据
+                generateMockBPData();
+            }
+            updateBPStats();
+            updateBPChart();
+        }
+
+        // 生成模拟血压数据
+        function generateMockBPData() {
+            const today = new Date();
+            bpRecords = [];
+            
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                
+                const sbp = 120 + Math.random() * 20 - 10; // 110-130
+                const dbp = 70 + Math.random() * 10 - 5;   // 65-75
+                
+                bpRecords.push({
+                    date: date.toISOString().split('T')[0],
+                    sbp: Math.round(sbp),
+                    dbp: Math.round(dbp),
+                    time: ['morning', 'afternoon', 'evening'][Math.floor(Math.random() * 3)],
+                    note: ''
+                });
+            }
+        }
+
+        // 更新血压统计
+        function updateBPStats() {
+            if (bpRecords.length === 0) return;
+            
+            const sbpValues = bpRecords.map(r => r.sbp);
+            const dbpValues = bpRecords.map(r => r.dbp);
+            
+            const avgSBP = Math.round(sbpValues.reduce((a, b) => a + b, 0) / sbpValues.length);
+            const avgDBP = Math.round(dbpValues.reduce((a, b) => a + b, 0) / dbpValues.length);
+            
+            // 计算变异性
+            const sbpVariance = sbpValues.reduce((acc, val) => acc + Math.pow(val - avgSBP, 2), 0) / sbpValues.length;
+            const sbpSD = Math.sqrt(sbpVariance);
+            const sbpCV = (sbpSD / avgSBP * 100).toFixed(1);
+            
+            document.getElementById('avgSBP').textContent = avgSBP;
+            document.getElementById('avgDBP').textContent = avgDBP;
+            document.getElementById('variability').textContent = sbpCV + '%';
+            
+            // 更新变异性指标
+            document.getElementById('sdValue').textContent = sbpSD.toFixed(1);
+            document.getElementById('cvValue').textContent = sbpCV + '%';
+            document.getElementById('vimValue').textContent = (sbpSD / Math.pow(avgSBP, 0.5)).toFixed(1);
+            document.getElementById('arValue').textContent = '0.15';
+        }
+
+        // 初始化血压图表
+        function initBPChart() {
+            const ctx = document.getElementById('bpChart').getContext('2d');
+            bpChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '收缩压 (SBP)',
+                            data: [],
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '舒张压 (DBP)',
+                            data: [],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 200,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' mmHg';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新血压图表
+        function updateBPChart() {
+            if (!bpChart || bpRecords.length === 0) return;
+            
+            let filteredRecords = bpRecords;
+            if (currentPeriod === '7d') {
+                filteredRecords = bpRecords.slice(-7);
+            } else if (currentPeriod === '30d') {
+                filteredRecords = bpRecords.slice(-30);
+            } else if (currentPeriod === '90d') {
+                filteredRecords = bpRecords;
+            }
+            
+            const labels = filteredRecords.map(r => {
+                const date = new Date(r.date);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+            
+            const sbpData = filteredRecords.map(r => r.sbp);
+            const dbpData = filteredRecords.map(r => r.dbp);
+            
+            bpChart.data.labels = labels;
+            bpChart.data.datasets[0].data = sbpData;
+            bpChart.data.datasets[1].data = dbpData;
+            bpChart.update();
+        }
+
+        // 设置图表时间周期
+        function setChartPeriod(period) {
+            currentPeriod = period;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.chart-period-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-600');
+            });
+            
+            document.querySelector(`[data-period="${period}"]`).classList.remove('bg-gray-200', 'text-gray-600');
+            document.querySelector(`[data-period="${period}"]`).classList.add('bg-blue-600', 'text-white');
+            
+            updateBPChart();
+        }
+
+        // 加载最近记录
+        function loadRecentRecords() {
+            const container = document.getElementById('recentRecords');
+            container.innerHTML = '';
+            
+            const recentRecords = bpRecords.slice(-5).reverse();
+            
+            recentRecords.forEach(record => {
+                const recordDiv = document.createElement('div');
+                recordDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                
+                const status = getBPStatus(record.sbp, record.dbp);
+                const statusColor = status === 'normal' ? 'text-green-600' : status === 'warning' ? 'text-yellow-600' : 'text-red-600';
+                const statusIcon = status === 'normal' ? 'fa-check-circle' : status === 'warning' ? 'fa-exclamation-triangle' : 'fa-times-circle';
+                
+                recordDiv.innerHTML = `
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-800">${record.date}</span>
+                            <span class="text-xs text-gray-500">${getTimeLabel(record.time)}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">${record.sbp}/${record.dbp} mmHg</div>
+                    </div>
+                    <div class="text-right">
+                        <i class="fas ${statusIcon} ${statusColor}"></i>
+                    </div>
+                `;
+                container.appendChild(recordDiv);
+            });
+        }
+
+        // 获取血压状态
+        function getBPStatus(sbp, dbp) {
+            if (sbp >= 140 || dbp >= 90) return 'alert';
+            if (sbp >= 130 || dbp >= 80) return 'warning';
+            return 'normal';
+        }
+
+        // 获取时间标签
+        function getTimeLabel(time) {
+            const labels = {
+                'morning': '早晨',
+                'afternoon': '下午',
+                'evening': '晚上',
+                'night': '夜间'
+            };
+            return labels[time] || time;
+        }
+
+        // 显示血压输入模态框
+        function showBPInput() {
+            document.getElementById('bpInputModal').classList.add('show');
+        }
+
+        // 隐藏血压输入模态框
+        function hideBPInput() {
+            document.getElementById('bpInputModal').classList.remove('show');
+        }
+
+        // 保存血压记录
+        function saveBPRecord() {
+            const date = document.getElementById('bpDate').value;
+            const sbp = parseInt(document.getElementById('bpSBP').value);
+            const dbp = parseInt(document.getElementById('bpDBP').value);
+            const time = document.getElementById('bpTime').value;
+            const note = document.getElementById('bpNote').value;
+            
+            if (!date || !sbp || !dbp) {
+                alert('请填写完整的血压信息');
+                return;
+            }
+            
+            const newRecord = {
+                date,
+                sbp,
+                dbp,
+                time,
+                note
+            };
+            
+            bpRecords.push(newRecord);
+            bpRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // 保存到本地存储
+            localStorage.setItem('bpRecords', JSON.stringify(bpRecords));
+            
+            // 更新显示
+            updateBPStats();
+            updateBPChart();
+            loadRecentRecords();
+            
+            // 关闭模态框
+            hideBPInput();
+            
+            // 清空表单
+            document.getElementById('bpSBP').value = '';
+            document.getElementById('bpDBP').value = '';
+            document.getElementById('bpNote').value = '';
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('bpInputModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideBPInput();
+            }
+        });
+    </script>
+</body>
+</html>

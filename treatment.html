@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>强化降压适宜性 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .suitability-high {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+        .suitability-medium {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        }
+        .suitability-low {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        }
+        .shap-bar {
+            transition: width 0.5s ease;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">强化降压适宜性</h1>
+        <button onclick="showExplanation()" class="text-blue-600">
+            <i class="fas fa-question-circle"></i>
+        </button>
+    </div>
+
+    <!-- 适宜性评估结果 -->
+    <div class="px-6 py-4">
+        <div id="suitabilityCard" class="suitability-high text-white rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h2 class="text-lg font-semibold">强化降压适宜性</h2>
+                    <p class="text-sm opacity-90">基于个体化治疗效应分析</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold" id="suitabilityLevel">高</div>
+                    <div class="text-sm opacity-90">获益等级</div>
+                </div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3">
+                <div class="text-sm opacity-90 mb-2">获益评分</div>
+                <div class="flex items-center">
+                    <div class="flex-1 bg-white bg-opacity-30 rounded-full h-2 mr-3">
+                        <div class="bg-white rounded-full h-2" style="width: 78%" id="benefitBar"></div>
+                    </div>
+                    <span class="text-lg font-bold" id="benefitScore">78%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 治疗建议 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>个性化治疗建议
+            </h3>
+            <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <p class="text-sm text-blue-800" id="treatmentAdvice">
+                    根据 ITE 与 SHAP 分析，您属于强化降压高获益人群。建议在医生指导下进行强化降压治疗，目标血压控制在 118-128/68-74 mmHg。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHAP 特征重要性 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">关键驱动因素</h3>
+            <div class="space-y-3" id="shapFeatures">
+                <!-- SHAP 特征将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 获益分布图 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">人群获益分布</h3>
+            <div class="h-48">
+                <canvas id="benefitChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 治疗监测指标 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">监测指标</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-3 bg-green-50 rounded-xl border border-green-200">
+                    <div class="text-2xl font-bold text-green-600" id="expectedBenefit">-15%</div>
+                    <div class="text-sm text-green-700">预期痴呆风险降低</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+                    <div class="text-2xl font-bold text-blue-600" id="confidenceLevel">85%</div>
+                    <div class="text-sm text-blue-700">预测置信度</div>
+                </div>
+                <div class="text-center p-3 bg-purple-50 rounded-xl border border-purple-200">
+                    <div class="text-2xl font-bold text-purple-600" id="treatmentDuration">12</div>
+                    <div class="text-sm text-purple-700">建议治疗周期(月)</div>
+                </div>
+                <div class="text-center p-3 bg-orange-50 rounded-xl border border-orange-200">
+                    <div class="text-2xl font-bold text-orange-600" id="followUpFreq">1</div>
+                    <div class="text-sm text-orange-700">复查频率(月)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 风险收益分析 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">风险收益分析</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <span class="text-sm font-medium text-green-800">主要收益</span>
+                    </div>
+                    <span class="text-sm text-green-700">显著降低痴呆风险</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-heart text-blue-600 mr-3"></i>
+                        <span class="text-sm font-medium text-blue-800">心血管保护</span>
+                    </div>
+                    <span class="text-sm text-blue-700">减少心脑血管事件</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                        <span class="text-sm font-medium text-yellow-800">潜在风险</span>
+                    </div>
+                    <span class="text-sm text-yellow-700">低血压、电解质紊乱</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 解释模态框 -->
+    <div id="explanationModal" class="modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">强化降压适宜性说明</h3>
+                <button onclick="hideExplanation()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm text-gray-700">
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">什么是强化降压？</h4>
+                    <p>强化降压是指将血压控制在更严格的目标范围内（通常 < 130/80 mmHg），相比标准降压（< 140/90 mmHg）能进一步降低心脑血管事件风险。</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">个体化治疗效应 (ITE)</h4>
+                    <p>通过机器学习模型分析每个患者的个体特征，预测强化降压对痴呆风险的具体影响，从而确定是否适合强化降压治疗。</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">SHAP 分析</h4>
+                    <p>SHAP (SHapley Additive exPlanations) 用于解释模型决策，识别对治疗效应影响最大的关键因素。</p>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <h4 class="font-semibold text-yellow-800 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>重要提醒
+                    </h4>
+                    <p class="text-yellow-700">
+                        本评估结果仅供医疗参考，具体治疗方案需由专业医生根据患者实际情况制定。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button onclick="hideExplanation()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+
+    <script>
+        let benefitChart;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTreatmentData();
+            initBenefitChart();
+        });
+
+        // 加载治疗数据
+        async function loadTreatmentData() {
+            try {
+                const response = await fetch('./assets/sample-ite.json');
+                const data = await response.json();
+                
+                updateSuitabilityCard(data.treatment);
+                updateShapFeatures(data.shap_top);
+                updateMonitoringMetrics();
+                
+            } catch (error) {
+                console.error('Error loading treatment data:', error);
+                showMockData();
+            }
+        }
+
+        // 显示模拟数据
+        function showMockData() {
+            const mockTreatment = {
+                suitability: "高",
+                explain: "根据 ITE 与 SHAP 分析，您属于强化降压高获益人群",
+                benefit_score: 0.78
+            };
+            
+            const mockShap = [
+                {"feature": "p-tau217", "impact": "+0.21", "description": "血浆磷酸化tau蛋白217"},
+                {"feature": "DBP轨迹变异度", "impact": "+0.17", "description": "舒张压变异性"},
+                {"feature": "年龄", "impact": "+0.13", "description": "年龄因素"},
+                {"feature": "糖尿病", "impact": "+0.08", "description": "糖尿病史"},
+                {"feature": "SBP均值", "impact": "+0.06", "description": "收缩压平均水平"}
+            ];
+            
+            updateSuitabilityCard(mockTreatment);
+            updateShapFeatures(mockShap);
+            updateMonitoringMetrics();
+        }
+
+        // 更新适宜性卡片
+        function updateSuitabilityCard(treatment) {
+            const suitability = treatment.suitability;
+            const benefitScore = Math.round(treatment.benefit_score * 100);
+            
+            document.getElementById('suitabilityLevel').textContent = suitability;
+            document.getElementById('benefitScore').textContent = benefitScore + '%';
+            document.getElementById('benefitBar').style.width = benefitScore + '%';
+            document.getElementById('treatmentAdvice').textContent = treatment.explain;
+            
+            // 更新卡片样式
+            const card = document.getElementById('suitabilityCard');
+            card.className = 'text-white rounded-2xl p-4';
+            
+            if (suitability === '高') {
+                card.classList.add('suitability-high');
+            } else if (suitability === '中') {
+                card.classList.add('suitability-medium');
+            } else {
+                card.classList.add('suitability-low');
+            }
+        }
+
+        // 更新SHAP特征
+        function updateShapFeatures(features) {
+            const container = document.getElementById('shapFeatures');
+            container.innerHTML = '';
+            
+            features.forEach((feature, index) => {
+                const impact = parseFloat(feature.impact.replace('+', ''));
+                const maxImpact = Math.max(...features.map(f => parseFloat(f.impact.replace('+', ''))));
+                const width = (impact / maxImpact) * 100;
+                
+                const featureDiv = document.createElement('div');
+                featureDiv.className = 'space-y-2';
+                featureDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800">${feature.feature}</div>
+                            <div class="text-sm text-gray-600">${feature.description}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-red-600">${feature.impact}</div>
+                            <div class="text-xs text-gray-500">影响度</div>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="shap-bar bg-gradient-to-r from-red-500 to-orange-500 rounded-full h-2" style="width: ${width}%"></div>
+                    </div>
+                `;
+                container.appendChild(featureDiv);
+            });
+        }
+
+        // 更新监测指标
+        function updateMonitoringMetrics() {
+            document.getElementById('expectedBenefit').textContent = '-15%';
+            document.getElementById('confidenceLevel').textContent = '85%';
+            document.getElementById('treatmentDuration').textContent = '12';
+            document.getElementById('followUpFreq').textContent = '1';
+        }
+
+        // 初始化获益分布图
+        function initBenefitChart() {
+            const ctx = document.getElementById('benefitChart').getContext('2d');
+            benefitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['低获益', '中获益', '高获益'],
+                    datasets: [{
+                        label: '人群分布 (%)',
+                        data: [25, 45, 30],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(16, 185, 129, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(239, 68, 68)',
+                            'rgb(245, 158, 11)',
+                            'rgb(16, 185, 129)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 50,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 显示解释
+        function showExplanation() {
+            document.getElementById('explanationModal').classList.add('show');
+        }
+
+        // 隐藏解释
+        function hideExplanation() {
+            document.getElementById('explanationModal').classList.remove('show');
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('explanationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideExplanation();
+            }
+        });
+    </script>
+</body>
+</html>

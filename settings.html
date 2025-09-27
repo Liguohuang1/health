@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .setting-item {
+            transition: background-color 0.2s ease;
+        }
+        .setting-item:hover {
+            background-color: #F9FAFB;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">设置</h1>
+        <div></div>
+    </div>
+
+    <!-- 单位设置 -->
+    <div class="px-6 py-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-ruler mr-2 text-blue-600"></i>单位设置
+            </h3>
+            <div class="space-y-4">
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">血压单位</div>
+                        <div class="text-sm text-gray-600">选择血压显示单位</div>
+                    </div>
+                    <select id="bpUnit" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="mmHg">mmHg</option>
+                        <option value="kPa">kPa</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">血糖单位</div>
+                        <div class="text-sm text-gray-600">选择血糖显示单位</div>
+                    </div>
+                    <select id="glucoseUnit" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="mmol/L">mmol/L</option>
+                        <option value="mg/dL">mg/dL</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">胆固醇单位</div>
+                        <div class="text-sm text-gray-600">选择胆固醇显示单位</div>
+                    </div>
+                    <select id="cholesterolUnit" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="mmol/L">mmol/L</option>
+                        <option value="mg/dL">mg/dL</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知设置 -->
+    <div class="px-6 py-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-bell mr-2 text-green-600"></i>通知设置
+            </h3>
+            <div class="space-y-4">
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">血压异常提醒</div>
+                        <div class="text-sm text-gray-600">血压超出目标范围时提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="bpAlert" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">风险变化提醒</div>
+                        <div class="text-sm text-gray-600">痴呆风险显著变化时提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="riskAlert" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">复查提醒</div>
+                        <div class="text-sm text-gray-600">定期复查时间提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="followUpAlert" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">药物提醒</div>
+                        <div class="text-sm text-gray-600">服药时间提醒</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="medicationAlert">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐私与数据 -->
+    <div class="px-6 py-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-shield-alt mr-2 text-purple-600"></i>隐私与数据
+            </h3>
+            <div class="space-y-4">
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">数据收集</div>
+                        <div class="text-sm text-gray-600">允许收集匿名化数据用于模型改进</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="dataCollection" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">云端同步</div>
+                        <div class="text-sm text-gray-600">将数据同步到云端备份</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="cloudSync">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">分析报告</div>
+                        <div class="text-sm text-gray-600">生成健康分析报告</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="analyticsReport" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据管理 -->
+    <div class="px-6 py-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-database mr-2 text-orange-600"></i>数据管理
+            </h3>
+            <div class="space-y-3">
+                <button onclick="exportData()" class="w-full setting-item flex items-center justify-between p-3 rounded-lg text-left">
+                    <div class="flex items-center">
+                        <i class="fas fa-download text-blue-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-800">导出数据</div>
+                            <div class="text-sm text-gray-600">导出所有健康数据</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                
+                <button onclick="importData()" class="w-full setting-item flex items-center justify-between p-3 rounded-lg text-left">
+                    <div class="flex items-center">
+                        <i class="fas fa-upload text-green-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-800">导入数据</div>
+                            <div class="text-sm text-gray-600">从文件导入健康数据</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                
+                <button onclick="showClearDataModal()" class="w-full setting-item flex items-center justify-between p-3 rounded-lg text-left">
+                    <div class="flex items-center">
+                        <i class="fas fa-trash text-red-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-800">清空数据</div>
+                            <div class="text-sm text-gray-600">删除所有本地数据</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关于应用 -->
+    <div class="px-6 py-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-info-circle mr-2 text-indigo-600"></i>关于应用
+            </h3>
+            <div class="space-y-3">
+                <button onclick="parent.loadPageInFrame('about.html')" class="w-full setting-item flex items-center justify-between p-3 rounded-lg text-left">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-alt text-indigo-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-800">关于我们</div>
+                            <div class="text-sm text-gray-600">团队信息与版本详情</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">版本号</div>
+                        <div class="text-sm text-gray-600">当前应用版本</div>
+                    </div>
+                    <span class="text-sm text-gray-500">v1.0.0</span>
+                </div>
+                
+                <div class="setting-item flex items-center justify-between p-3 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">数据存储</div>
+                        <div class="text-sm text-gray-600">本地存储使用情况</div>
+                    </div>
+                    <span class="text-sm text-gray-500" id="storageUsage">2.3 MB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清空数据确认模态框 -->
+    <div id="clearDataModal" class="modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">确认清空数据</h3>
+                <button onclick="hideClearDataModal()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-3 mt-1"></i>
+                        <div class="text-sm text-red-800">
+                            <div class="font-medium mb-2">警告：此操作不可撤销！</div>
+                            <div>清空数据将删除以下内容：</div>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li>所有血压记录</li>
+                                <li>个人信息档案</li>
+                                <li>风险预测历史</li>
+                                <li>聊天记录</li>
+                                <li>所有设置配置</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="confirmClear" class="mr-3">
+                    <label for="confirmClear" class="text-sm text-gray-700">我确认要清空所有数据</label>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex space-x-3">
+                <button onclick="hideClearDataModal()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium">
+                    取消
+                </button>
+                <button onclick="clearAllData()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-medium" disabled id="clearButton">
+                    确认清空
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+
+    <script>
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            updateStorageUsage();
+        });
+
+        // 加载设置
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+            
+            // 加载单位设置
+            document.getElementById('bpUnit').value = settings.bpUnit || 'mmHg';
+            document.getElementById('glucoseUnit').value = settings.glucoseUnit || 'mmol/L';
+            document.getElementById('cholesterolUnit').value = settings.cholesterolUnit || 'mmol/L';
+            
+            // 加载通知设置
+            document.getElementById('bpAlert').checked = settings.bpAlert !== false;
+            document.getElementById('riskAlert').checked = settings.riskAlert !== false;
+            document.getElementById('followUpAlert').checked = settings.followUpAlert !== false;
+            document.getElementById('medicationAlert').checked = settings.medicationAlert || false;
+            
+            // 加载隐私设置
+            document.getElementById('dataCollection').checked = settings.dataCollection !== false;
+            document.getElementById('cloudSync').checked = settings.cloudSync || false;
+            document.getElementById('analyticsReport').checked = settings.analyticsReport !== false;
+        }
+
+        // 保存设置
+        function saveSettings() {
+            const settings = {
+                bpUnit: document.getElementById('bpUnit').value,
+                glucoseUnit: document.getElementById('glucoseUnit').value,
+                cholesterolUnit: document.getElementById('cholesterolUnit').value,
+                bpAlert: document.getElementById('bpAlert').checked,
+                riskAlert: document.getElementById('riskAlert').checked,
+                followUpAlert: document.getElementById('followUpAlert').checked,
+                medicationAlert: document.getElementById('medicationAlert').checked,
+                dataCollection: document.getElementById('dataCollection').checked,
+                cloudSync: document.getElementById('cloudSync').checked,
+                analyticsReport: document.getElementById('analyticsReport').checked
+            };
+            
+            localStorage.setItem('appSettings', JSON.stringify(settings));
+            showToast('设置已保存！');
+        }
+
+        // 更新存储使用情况
+        function updateStorageUsage() {
+            let totalSize = 0;
+            
+            // 计算localStorage使用量
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += localStorage[key].length;
+                }
+            }
+            
+            const sizeInMB = (totalSize / 1024 / 1024).toFixed(1);
+            document.getElementById('storageUsage').textContent = sizeInMB + ' MB';
+        }
+
+        // 导出数据
+        function exportData() {
+            const data = {
+                patientProfile: JSON.parse(localStorage.getItem('patientProfile') || '{}'),
+                bpRecords: JSON.parse(localStorage.getItem('bpRecords') || '[]'),
+                chatHistory: JSON.parse(localStorage.getItem('chatHistory') || '[]'),
+                settings: JSON.parse(localStorage.getItem('appSettings') || '{}'),
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `health-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showToast('数据导出成功！');
+        }
+
+        // 导入数据
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            
+                            if (data.patientProfile) {
+                                localStorage.setItem('patientProfile', JSON.stringify(data.patientProfile));
+                            }
+                            if (data.bpRecords) {
+                                localStorage.setItem('bpRecords', JSON.stringify(data.bpRecords));
+                            }
+                            if (data.chatHistory) {
+                                localStorage.setItem('chatHistory', JSON.stringify(data.chatHistory));
+                            }
+                            if (data.settings) {
+                                localStorage.setItem('appSettings', JSON.stringify(data.settings));
+                                loadSettings();
+                            }
+                            
+                            showToast('数据导入成功！');
+                            updateStorageUsage();
+                        } catch (error) {
+                            showToast('数据格式错误！');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // 显示清空数据模态框
+        function showClearDataModal() {
+            document.getElementById('clearDataModal').classList.add('show');
+        }
+
+        // 隐藏清空数据模态框
+        function hideClearDataModal() {
+            document.getElementById('clearDataModal').classList.remove('show');
+            document.getElementById('confirmClear').checked = false;
+            document.getElementById('clearButton').disabled = true;
+        }
+
+        // 清空所有数据
+        function clearAllData() {
+            if (document.getElementById('confirmClear').checked) {
+                localStorage.clear();
+                showToast('所有数据已清空！');
+                hideClearDataModal();
+                updateStorageUsage();
+                // 重新加载设置
+                loadSettings();
+            }
+        }
+
+        // 监听确认复选框变化
+        document.getElementById('confirmClear').addEventListener('change', function() {
+            document.getElementById('clearButton').disabled = !this.checked;
+        });
+
+        // 监听设置变化并自动保存
+        document.addEventListener('change', function(e) {
+            if (e.target.matches('select, input[type="checkbox"]')) {
+                saveSettings();
+            }
+        });
+
+        // 显示提示信息
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('clearDataModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideClearDataModal();
+            }
+        });
+    </script>
+</body>
+</html>

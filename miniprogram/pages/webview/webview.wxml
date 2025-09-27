@@ -1,0 +1,17 @@
+<view class="webview-container">
+  <!-- 加载提示 -->
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">正在加载健康管理系统...</view>
+    </view>
+  </view>
+
+  <!-- WebView组件 -->
+  <web-view 
+    src="{{webviewUrl}}" 
+    bindload="onWebViewLoad"
+    binderror="onWebViewError"
+    bindmessage="onWebViewMessage">
+  </web-view>
+</view>

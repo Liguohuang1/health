@@ -1,0 +1,26 @@
+{
+  "risk": {
+    "y1": 0.12,
+    "y2": 0.19,
+    "y5": 0.36,
+    "y10": 0.58
+  },
+  "bp_target": {
+    "sbp_low": 118,
+    "sbp_high": 128,
+    "dbp_low": 68,
+    "dbp_high": 74
+  },
+  "treatment": {
+    "suitability": "高",
+    "explain": "根据 ITE 与 SHAP 分析，您属于强化降压高获益人群",
+    "benefit_score": 0.78
+  },
+  "shap_top": [
+    {"feature": "p-tau217", "impact": "+0.21", "description": "血浆磷酸化tau蛋白217"},
+    {"feature": "DBP轨迹变异度", "impact": "+0.17", "description": "舒张压变异性"},
+    {"feature": "年龄", "impact": "+0.13", "description": "年龄因素"},
+    {"feature": "糖尿病", "impact": "+0.08", "description": "糖尿病史"},
+    {"feature": "SBP均值", "impact": "+0.06", "description": "收缩压平均水平"}
+  ]
+}

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .iphone-frame {
+            width: 430px;
+            height: 932px;
+            background: #1a1a1a;
+            border-radius: 50px;
+            padding: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .iphone-screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 42px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 30px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+        
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding-bottom: 20px;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tab-item.active {
+            background: #2563EB;
+            color: white;
+        }
+        
+        .tab-item i {
+            font-size: 20px;
+        }
+        
+        .tab-item span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: calc(100% - 100px);
+            border: none;
+        }
+        
+        .disclaimer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        .wechat-tip {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(22, 163, 74, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            z-index: 1001;
+        }
+        
+        .wechat-tip-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 微信小程序适配 */
+        @media (max-width: 450px) {
+            .iphone-frame {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            
+            .iphone-screen {
+                border-radius: 0;
+            }
+            
+            .notch {
+                display: none;
+            }
+        }
+        
+        /* 错误页面样式 */
+        .error-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .error-container.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <!-- 免责声明 -->
+    <div class="disclaimer">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        本原型仅用于科研产品演示，非医疗诊断或治疗建议
+    </div>
+
+    <!-- 微信小程序适配提示 -->
+    <div id="wechatTip" class="wechat-tip" style="display: none;">
+        <div class="wechat-tip-content">
+            <i class="fas fa-mobile-alt mr-2"></i>
+            在微信小程序中体验完整功能
+        </div>
+    </div>
+
+    <!-- iPhone 15 Pro 机框 -->
+    <div class="iphone-frame">
+        <div class="iphone-screen">
+            <!-- 刘海 -->
+            <div class="notch"></div>
+            
+            <!-- 主内容区域 -->
+            <iframe id="mainFrame" src="home.html" class="iframe-container" onload="handleIframeLoad()" onerror="handleIframeError()"></iframe>
+            
+            <!-- 错误提示页面 -->
+            <div id="errorContainer" class="error-container">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">页面加载失败</h3>
+                <p class="text-gray-600 mb-4">无法加载应用内容，请检查网络连接</p>
+                <button onclick="reloadApp()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">
+                    重新加载
+                </button>
+            </div>
+            
+            <!-- 底部导航栏 -->
+            <div class="tab-bar">
+                <div class="tab-item active" onclick="loadPage('home.html', this)">
+                    <i class="fas fa-house"></i>
+                    <span>首页</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('risk.html', this)">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>风险</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('bp.html', this)">
+                    <i class="fas fa-heart-pulse"></i>
+                    <span>血压</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('treatment.html', this)">
+                    <i class="fas fa-sliders"></i>
+                    <span>适宜性</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('chat.html', this)">
+                    <i class="fas fa-comments"></i>
+                    <span>聊天</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isWechat = false;
+        let appLoaded = false;
+
+        // 页面加载函数
+        function loadPage(page, element) {
+            try {
+                // 更新活动标签
+                document.querySelectorAll('.tab-item').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                element.classList.add('active');
+                
+                // 隐藏错误容器
+                document.getElementById('errorContainer').classList.remove('show');
+                document.getElementById('mainFrame').style.display = 'block';
+                
+                // 加载页面
+                document.getElementById('mainFrame').src = page;
+                
+                console.log(`加载页面: ${page}`);
+            } catch (error) {
+                console.error('页面加载错误:', error);
+                handleIframeError();
+            }
+        }
+        
+        // 全局函数，供iframe内的页面调用
+        window.loadPageInFrame = function(page) {
+            const targetElement = document.querySelector(`[onclick*="${page}"]`);
+            if (targetElement) {
+                loadPage(page, targetElement);
+            } else {
+                // 如果找不到对应的标签，使用默认的导航
+                console.log(`导航到页面: ${page}`);
+                document.getElementById('mainFrame').src = page;
+            }
+        };
+        
+        // iframe加载成功处理
+        function handleIframeLoad() {
+            appLoaded = true;
+            document.getElementById('errorContainer').classList.remove('show');
+            document.getElementById('mainFrame').style.display = 'block';
+            console.log('页面加载成功');
+        }
+        
+        // iframe加载错误处理
+        function handleIframeError() {
+            console.error('iframe加载失败');
+            document.getElementById('mainFrame').style.display = 'none';
+            document.getElementById('errorContainer').classList.add('show');
+        }
+        
+        // 重新加载应用
+        function reloadApp() {
+            const currentSrc = document.getElementById('mainFrame').src;
+            document.getElementById('mainFrame').src = '';
+            setTimeout(() => {
+                document.getElementById('mainFrame').src = currentSrc || 'home.html';
+            }, 100);
+        }
+        
+        // 检测微信环境
+        function detectWechat() {
+            const ua = navigator.userAgent.toLowerCase();
+            isWechat = ua.includes('micromessenger');
+            
+            if (isWechat) {
+                document.getElementById('wechatTip').style.display = 'block';
+                console.log('检测到微信环境');
+                
+                // 微信小程序web-view适配
+                if (window.wx && window.wx.miniProgram) {
+                    console.log('在微信小程序中运行');
+                    
+                    // 通知小程序页面加载完成
+                    wx.miniProgram.postMessage({
+                        data: {
+                            action: 'pageLoaded',
+                            page: 'index'
+                        }
+                    });
+                }
+            }
+        }
+        
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            console.error('全局错误:', e.error);
+            if (!appLoaded) {
+                handleIframeError();
+            }
+        });
+        
+        // iframe错误监听
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'iframe-error') {
+                handleIframeError();
+            }
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('痴呆风险预测与个体化血压管理 App 已加载');
+            
+            // 检测环境
+            detectWechat();
+            
+            // 设置iframe加载超时
+            setTimeout(() => {
+                if (!appLoaded) {
+                    console.warn('页面加载超时');
+                    handleIframeError();
+                }
+            }, 10000); // 10秒超时
+            
+            // 为微信小程序优化样式
+            if (isWechat) {
+                document.body.style.padding = '0';
+                document.body.classList.remove('p-4');
+            }
+        });
+        
+        // 向父窗口发送消息（如果在iframe中）
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'app-ready',
+                data: { ready: true }
+            }, '*');
+        }
+    </script>
+</body>
+</html>

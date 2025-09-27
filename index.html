@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 移除iPhone框架，直接全屏显示 */
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 1000;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tab-item.active {
+            background: #2563EB;
+            color: white;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 80px);
+            border: none;
+        }
+        
+        .error-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 80px);
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .error-container.show {
+            display: flex;
+        }
+        
+        .wechat-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(22, 163, 74, 0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            z-index: 1001;
+            display: none;
+        }
+        
+        .disclaimer {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            max-width: 200px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 微信小程序状态提示 -->
+    <div id="wechatStatus" class="wechat-status">
+        <i class="fas fa-mobile-alt mr-1"></i>
+        微信小程序版本
+    </div>
+    
+    <!-- 免责声明 -->
+    <div class="disclaimer">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        仅供科研演示使用
+    </div>
+
+    <!-- 应用容器 -->
+    <div class="app-container">
+        <!-- 主内容区域 -->
+        <iframe 
+            id="mainFrame" 
+            src="home.html" 
+            class="iframe-container" 
+            onload="handleIframeLoad()" 
+            onerror="handleIframeError()">
+        </iframe>
+        
+        <!-- 错误提示页面 -->
+        <div id="errorContainer" class="error-container">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">页面加载失败</h3>
+            <p class="text-gray-600 mb-4">无法加载应用内容，请检查网络连接</p>
+            <button onclick="reloadApp()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">
+                重新加载
+            </button>
+        </div>
+        
+        <!-- 底部导航栏 -->
+        <div class="tab-bar">
+            <div class="tab-item active" onclick="loadPage('home.html', this)">
+                <i class="fas fa-house"></i>
+                <span style="font-size: 12px;">首页</span>
+            </div>
+            <div class="tab-item" onclick="loadPage('risk.html', this)">
+                <i class="fas fa-chart-pie"></i>
+                <span style="font-size: 12px;">风险</span>
+            </div>
+            <div class="tab-item" onclick="loadPage('bp.html', this)">
+                <i class="fas fa-heart-pulse"></i>
+                <span style="font-size: 12px;">血压</span>
+            </div>
+            <div class="tab-item" onclick="loadPage('treatment.html', this)">
+                <i class="fas fa-sliders"></i>
+                <span style="font-size: 12px;">适宜性</span>
+            </div>
+            <div class="tab-item" onclick="loadPage('chat.html', this)">
+                <i class="fas fa-comments"></i>
+                <span style="font-size: 12px;">聊天</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isWechat = false;
+        let appLoaded = false;
+
+        // 页面加载函数
+        function loadPage(page, element) {
+            try {
+                // 更新活动标签
+                document.querySelectorAll('.tab-item').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                element.classList.add('active');
+                
+                // 隐藏错误容器
+                document.getElementById('errorContainer').classList.remove('show');
+                document.getElementById('mainFrame').style.display = 'block';
+                
+                // 加载页面
+                document.getElementById('mainFrame').src = page;
+                
+                console.log(`加载页面: ${page}`);
+                
+                // 向微信小程序发送消息
+                if (isWechat && window.wx && window.wx.miniProgram) {
+                    wx.miniProgram.postMessage({
+                        data: {
+                            action: 'pageChanged',
+                            page: page
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('页面加载错误:', error);
+                handleIframeError();
+            }
+        }
+        
+        // 全局函数，供iframe内的页面调用
+        window.loadPageInFrame = function(page) {
+            const targetElement = document.querySelector(`[onclick*="${page}"]`);
+            if (targetElement) {
+                loadPage(page, targetElement);
+            } else {
+                console.log(`导航到页面: ${page}`);
+                document.getElementById('mainFrame').src = page;
+            }
+        };
+        
+        // iframe加载成功处理
+        function handleIframeLoad() {
+            appLoaded = true;
+            document.getElementById('errorContainer').classList.remove('show');
+            document.getElementById('mainFrame').style.display = 'block';
+            console.log('页面加载成功');
+        }
+        
+        // iframe加载错误处理
+        function handleIframeError() {
+            console.error('iframe加载失败');
+            document.getElementById('mainFrame').style.display = 'none';
+            document.getElementById('errorContainer').classList.add('show');
+        }
+        
+        // 重新加载应用
+        function reloadApp() {
+            const currentSrc = document.getElementById('mainFrame').src;
+            document.getElementById('mainFrame').src = '';
+            setTimeout(() => {
+                document.getElementById('mainFrame').src = currentSrc || 'home.html';
+            }, 100);
+        }
+        
+        // 检测微信环境
+        function detectWechat() {
+            const ua = navigator.userAgent.toLowerCase();
+            isWechat = ua.includes('micromessenger');
+            
+            if (isWechat) {
+                document.getElementById('wechatStatus').style.display = 'block';
+                console.log('检测到微信环境');
+                
+                // 微信小程序web-view适配
+                if (window.wx && window.wx.miniProgram) {
+                    console.log('在微信小程序中运行');
+                    
+                    // 通知小程序应用加载完成
+                    wx.miniProgram.postMessage({
+                        data: {
+                            action: 'appReady',
+                            version: '1.0.0'
+                        }
+                    });
+                }
+            }
+        }
+        
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            console.error('全局错误:', e.error);
+            if (!appLoaded) {
+                handleIframeError();
+            }
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('痴呆风险预测与个体化血压管理 Web-view 版本已加载');
+            
+            // 检测环境
+            detectWechat();
+            
+            // 设置iframe加载超时
+            setTimeout(() => {
+                if (!appLoaded) {
+                    console.warn('页面加载超时');
+                    handleIframeError();
+                }
+            }, 10000); // 10秒超时
+        });
+        
+        // 向微信小程序发送ready消息
+        if (window.wx && window.wx.miniProgram) {
+            window.wx.miniProgram.postMessage({
+                data: {
+                    action: 'ready',
+                    url: window.location.href
+                }
+            });
+        }
+    </script>
+</body>
+</html>

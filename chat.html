@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能问答 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-message {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            margin-left: auto;
+        }
+        .bot-message {
+            background: #F3F4F6;
+            color: #374151;
+            margin-right: auto;
+        }
+        .typing-indicator {
+            display: none;
+        }
+        .typing-indicator.show {
+            display: block;
+        }
+        .api-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .api-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">智能问答</h1>
+        <button onclick="showAPISettings()" class="text-blue-600">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+
+    <!-- 聊天区域 -->
+    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4" id="chatContainer" style="height: calc(100vh - 200px);">
+        <!-- 欢迎消息 -->
+        <div class="chat-message bot-message p-4 rounded-2xl rounded-tl-sm">
+            <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-blue-600"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-medium text-sm mb-1">AI健康助手</div>
+                    <div class="text-sm">
+                        您好！我是您的AI健康助手，可以为您解答关于痴呆风险预测、血压管理、治疗适宜性等相关问题。请随时向我提问！
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速问题建议 -->
+        <div class="space-y-2">
+            <div class="text-sm text-gray-600 text-center">快速提问：</div>
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button onclick="askQuickQuestion('什么是痴呆风险预测？')" class="px-3 py-2 bg-blue-100 text-blue-700 rounded-full text-xs">
+                    什么是痴呆风险预测？
+                </button>
+                <button onclick="askQuickQuestion('如何控制血压？')" class="px-3 py-2 bg-green-100 text-green-700 rounded-full text-xs">
+                    如何控制血压？
+                </button>
+                <button onclick="askQuickQuestion('强化降压适合我吗？')" class="px-3 py-2 bg-purple-100 text-purple-700 rounded-full text-xs">
+                    强化降压适合我吗？
+                </button>
+            </div>
+        </div>
+
+        <!-- 聊天消息将在这里动态添加 -->
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="bg-white border-t border-gray-200 px-6 py-4">
+        <div class="flex items-center space-x-3">
+            <div class="flex-1 relative">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="输入您的问题..." 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button onclick="sendMessage()" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 打字指示器 -->
+        <div class="typing-indicator mt-2" id="typingIndicator">
+            <div class="flex items-center space-x-2 text-gray-500 text-sm">
+                <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-xs"></i>
+                </div>
+                <span>AI助手正在思考...</span>
+                <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API设置模态框 -->
+    <div id="apiModal" class="api-modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">API设置</h3>
+                <button onclick="hideAPISettings()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                    <input 
+                        type="password" 
+                        id="apiKey" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        placeholder="请输入您的API Key"
+                    >
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择模型</label>
+                    <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="gpt-3.5-turbo">ChatGPT-3.5 Turbo</option>
+                        <option value="gpt-4">ChatGPT-4</option>
+                        <option value="deepseek-chat">DeepSeek Chat</option>
+                        <option value="claude-3">Claude-3</option>
+                    </select>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-1"></i>
+                        <div class="text-sm text-yellow-800">
+                            <div class="font-medium mb-1">重要提醒</div>
+                            <div>未配置API时，系统将返回演示回答。配置API后可使用真实AI对话功能。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex space-x-3">
+                <button onclick="hideAPISettings()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium">
+                    取消
+                </button>
+                <button onclick="saveAPISettings()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">
+                    保存设置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-4"></div>
+
+    <script>
+        let chatHistory = [];
+        let apiConfigured = false;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAPISettings();
+        });
+
+        // 加载API设置
+        function loadAPISettings() {
+            const savedAPIKey = localStorage.getItem('apiKey');
+            const savedModel = localStorage.getItem('selectedModel');
+            
+            if (savedAPIKey) {
+                document.getElementById('apiKey').value = savedAPIKey;
+                apiConfigured = true;
+            }
+            if (savedModel) {
+                document.getElementById('modelSelect').value = savedModel;
+            }
+        }
+
+        // 保存API设置
+        function saveAPISettings() {
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('modelSelect').value;
+            
+            if (apiKey) {
+                localStorage.setItem('apiKey', apiKey);
+                localStorage.setItem('selectedModel', model);
+                apiConfigured = true;
+                showToast('API设置已保存！');
+            } else {
+                apiConfigured = false;
+                showToast('API Key不能为空！');
+            }
+            
+            hideAPISettings();
+        }
+
+        // 显示API设置
+        function showAPISettings() {
+            document.getElementById('apiModal').classList.add('show');
+        }
+
+        // 隐藏API设置
+        function hideAPISettings() {
+            document.getElementById('apiModal').classList.remove('show');
+        }
+
+        // 快速提问
+        function askQuickQuestion(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // 显示打字指示器
+            showTypingIndicator();
+            
+            // 模拟AI回复
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = generateResponse(message);
+                addMessage(response, 'bot');
+            }, 1500);
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 添加消息到聊天区域
+        function addMessage(message, sender) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message p-4 rounded-2xl ${sender === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`;
+            
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-1">
+                            <div class="text-sm">${message}</div>
+                            <div class="text-xs opacity-70 mt-1">${time}</div>
+                        </div>
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm mb-1">AI健康助手</div>
+                            <div class="text-sm">${message}</div>
+                            <div class="text-xs text-gray-500 mt-1">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 保存到聊天历史
+            chatHistory.push({ message, sender, time });
+        }
+
+        // 显示打字指示器
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').classList.add('show');
+        }
+
+        // 隐藏打字指示器
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').classList.remove('show');
+        }
+
+        // 生成AI回复
+        function generateResponse(userMessage) {
+            if (!apiConfigured) {
+                return generateMockResponse(userMessage);
+            }
+            
+            // 这里可以添加真实的API调用
+            return generateMockResponse(userMessage);
+        }
+
+        // 生成模拟回复
+        function generateMockResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            if (message.includes('痴呆') || message.includes('风险预测')) {
+                return `痴呆风险预测是基于多维度数据分析的个性化评估工具。我们的模型考虑了以下因素：
+
+• 人口学特征（年龄、性别、教育水平等）
+• 血压轨迹与变异性
+• 生物标志物（如p-tau217）
+• 既往病史和实验室检查
+• 生活方式因素
+
+通过机器学习算法，可以预测1-10年的痴呆风险，准确率达到85%以上。但请注意，这仅供科研参考，不能替代专业医疗诊断。`;
+            }
+            
+            if (message.includes('血压') || message.includes('控制')) {
+                return `血压管理是预防痴呆的重要措施。建议：
+
+• 目标血压：根据个体化评估确定，通常为118-128/68-74 mmHg
+• 定期监测：建议每日测量并记录
+• 生活方式：低盐饮食、适量运动、戒烟限酒
+• 药物治疗：在医生指导下使用降压药物
+• 血压变异性：保持稳定，避免大幅波动
+
+建议您定期复查血压，如有异常及时就医。`;
+            }
+            
+            if (message.includes('强化降压') || message.includes('适宜性')) {
+                return `强化降压适宜性评估基于个体化治疗效应(ITE)分析：
+
+• 高适宜性：预期获益显著，风险较低
+• 中等适宜性：有一定获益，需权衡风险
+• 低适宜性：获益有限，风险较高
+
+评估考虑因素包括：
+- 当前血压水平
+- 血压变异性
+- 年龄和基础疾病
+- 生物标志物水平
+
+建议在医生指导下进行个体化治疗决策。`;
+            }
+            
+            if (message.includes('监测') || message.includes('提醒')) {
+                return `健康监测包括：
+
+• 血压监测：每日测量，记录趋势
+• 风险监测：定期评估痴呆风险变化
+• 药物监测：观察治疗效果和副作用
+• 生活方式监测：运动、饮食、睡眠等
+
+系统会根据您的数据自动生成提醒和建议，帮助您更好地管理健康。`;
+            }
+            
+            if (message.includes('数据') || message.includes('隐私')) {
+                return `我们非常重视您的数据安全和隐私保护：
+
+• 数据加密：所有数据均采用端到端加密
+• 本地存储：敏感数据优先本地存储
+• 匿名化：用于模型训练的数据已匿名化处理
+• 合规性：严格遵守相关法律法规
+• 用户控制：您可随时查看、修改或删除数据
+
+如有任何隐私相关问题，请随时联系我们。`;
+            }
+            
+            // 默认回复
+            return `感谢您的问题！我是AI健康助手，专门为您解答关于痴呆风险预测和血压管理的问题。
+
+我可以帮助您了解：
+• 痴呆风险预测的原理和方法
+• 血压管理的策略和技巧
+• 强化降压的适宜性评估
+• 健康监测和提醒功能
+• 数据安全和隐私保护
+
+请告诉我您想了解的具体问题，我会为您提供详细的解答。`;
+        }
+
+        // 显示提示信息
+        function showToast(message) {
+            // 简单的提示实现
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('apiModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideAPISettings();
+            }
+        });
+    </script>
+</body>
+</html>

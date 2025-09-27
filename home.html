@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部横幅 -->
+    <div class="hero-bg text-white p-6 pb-8">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h1 class="text-2xl font-bold">智能健康管理</h1>
+                <p class="text-blue-100 text-sm">痴呆风险预测与个体化血压管理</p>
+            </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <i class="fas fa-brain text-2xl"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white bg-opacity-10 rounded-2xl p-4 backdrop-blur-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">欢迎使用AI驱动的健康管理平台</p>
+                    <p class="text-xs opacity-75 mt-1">基于最新医学研究，为您提供个性化健康建议</p>
+                </div>
+                <i class="fas fa-arrow-right text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速统计 -->
+    <div class="px-6 -mt-4 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-lg">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">85%</div>
+                    <div class="text-xs text-gray-600">预测准确率</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">1.2M+</div>
+                    <div class="text-xs text-gray-600">用户数据</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">24/7</div>
+                    <div class="text-xs text-gray-600">智能监测</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心功能 -->
+    <div class="px-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">核心功能</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <!-- 风险预测 -->
+            <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="parent.loadPageInFrame('risk.html')">
+                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-3">
+                    <i class="fas fa-chart-pie text-red-600 text-xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">痴呆风险预测</h3>
+                <p class="text-xs text-gray-600 mb-3">基于多维度数据预测1-10年痴呆风险</p>
+                <div class="flex items-center text-xs text-red-600">
+                    <span>查看详情</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </div>
+
+            <!-- 血压管理 -->
+            <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="parent.loadPageInFrame('bp.html')">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
+                    <i class="fas fa-heart-pulse text-blue-600 text-xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">血压管理</h3>
+                <p class="text-xs text-gray-600 mb-3">个性化血压目标与轨迹监测</p>
+                <div class="flex items-center text-xs text-blue-600">
+                    <span>查看详情</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </div>
+
+            <!-- 治疗适宜性 -->
+            <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="parent.loadPageInFrame('treatment.html')">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-3">
+                    <i class="fas fa-sliders text-green-600 text-xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">治疗适宜性</h3>
+                <p class="text-xs text-gray-600 mb-3">强化降压获益评估与建议</p>
+                <div class="flex items-center text-xs text-green-600">
+                    <span>查看详情</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </div>
+
+            <!-- 智能问答 -->
+            <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="parent.loadPageInFrame('chat.html')">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-3">
+                    <i class="fas fa-comments text-purple-600 text-xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800 mb-1">智能问答</h3>
+                <p class="text-xs text-gray-600 mb-3">AI健康顾问24小时在线</p>
+                <div class="flex items-center text-xs text-purple-600">
+                    <span>开始对话</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="px-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">快速操作</h2>
+        <div class="space-y-3">
+            <button onclick="parent.loadPageInFrame('profile.html')" class="w-full bg-blue-600 text-white rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-user-plus text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-semibold">完善个人信息</div>
+                        <div class="text-sm opacity-90">录入详细健康数据</div>
+                    </div>
+                </div>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <button onclick="parent.loadPageInFrame('alerts.html')" class="w-full bg-orange-500 text-white rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-bell text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-semibold">查看健康提醒</div>
+                        <div class="text-sm opacity-90">监测异常与建议</div>
+                    </div>
+                </div>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <button onclick="parent.loadPageInFrame('settings.html')" class="w-full bg-gray-600 text-white rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-cog text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-semibold">系统设置</div>
+                        <div class="text-sm opacity-90">个性化配置与隐私</div>
+                    </div>
+                </div>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 最新动态 -->
+    <div class="px-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">最新动态</h2>
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex items-start space-x-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-newspaper text-blue-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-800 text-sm">系统更新</h3>
+                    <p class="text-xs text-gray-600 mt-1">新增血压变异性分析功能，提升预测精度</p>
+                    <div class="text-xs text-gray-400 mt-2">2小时前</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+</body>
+</html>

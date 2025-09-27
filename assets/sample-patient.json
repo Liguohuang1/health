@@ -1,0 +1,47 @@
+{
+  "demographics": {
+    "age": 65,
+    "gender": "male",
+    "education": "college",
+    "height": 175,
+    "weight": 75,
+    "bmi": 24.5,
+    "marital_status": "married",
+    "income": "50000-100000"
+  },
+  "lifestyle": {
+    "smoking": 0,
+    "alcohol_beer": 2,
+    "alcohol_wine": 1,
+    "alcohol_spirits": 0,
+    "exercise_hours": 5
+  },
+  "blood_pressure": [
+    {"date": "2024-01-01", "sbp": 125, "dbp": 78},
+    {"date": "2024-01-02", "sbp": 128, "dbp": 80},
+    {"date": "2024-01-03", "sbp": 122, "dbp": 75}
+  ],
+  "medical_history": {
+    "stroke": false,
+    "diabetes": true,
+    "chronic_kidney_disease": false,
+    "myocardial_infarction": false,
+    "angina": false,
+    "atrial_fibrillation": false
+  },
+  "lab_values": {
+    "fasting_glucose": 6.8,
+    "triglycerides": 1.5,
+    "total_cholesterol": 5.2,
+    "creatinine": 85,
+    "hdl_c": 1.2,
+    "ldl_c": 3.1
+  },
+  "cognitive": {
+    "year4_score": 24,
+    "dementia_diagnosis": false
+  },
+  "biomarkers": {
+    "p_tau217": 2.8
+  }
+}

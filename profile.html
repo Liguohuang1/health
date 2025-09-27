@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>患者信息 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10B981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">患者信息</h1>
+        <button onclick="showToast('保存成功！')" class="text-blue-600 font-medium">保存</button>
+    </div>
+
+    <!-- 标签页导航 -->
+    <div class="bg-white px-6 py-2 border-b border-gray-100">
+        <div class="flex space-x-6">
+            <button onclick="switchTab('demographics')" class="tab-btn py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600" data-tab="demographics">
+                基本信息
+            </button>
+            <button onclick="switchTab('medical')" class="tab-btn py-2 text-sm font-medium border-b-2 border-transparent text-gray-500" data-tab="medical">
+                医疗信息
+            </button>
+            <button onclick="switchTab('lifestyle')" class="tab-btn py-2 text-sm font-medium border-b-2 border-transparent text-gray-500" data-tab="lifestyle">
+                生活方式
+            </button>
+        </div>
+    </div>
+
+    <!-- 表单内容 -->
+    <div class="p-6">
+        <!-- 基本信息标签页 -->
+        <div id="demographics" class="tab-content active">
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">年龄 *</label>
+                    <input type="number" id="age" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入年龄" min="18" max="120">
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">性别 *</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="gender" value="male" class="mr-2">
+                            <span>男性</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="gender" value="female" class="mr-2">
+                            <span>女性</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">教育水平 *</label>
+                    <select id="education" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">请选择教育水平</option>
+                        <option value="primary">小学及以下</option>
+                        <option value="middle">初中</option>
+                        <option value="high">高中</option>
+                        <option value="college">大学</option>
+                        <option value="graduate">研究生及以上</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">身高 (cm) *</label>
+                        <input type="number" id="height" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="170" min="100" max="250">
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">体重 (kg) *</label>
+                        <input type="number" id="weight" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="70" min="30" max="200">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">BMI</label>
+                    <input type="text" id="bmi" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">婚姻状况</label>
+                    <select id="marital_status" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">请选择婚姻状况</option>
+                        <option value="single">未婚</option>
+                        <option value="married">已婚</option>
+                        <option value="divorced">离异</option>
+                        <option value="widowed">丧偶</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">年收入</label>
+                    <select id="income" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">请选择年收入范围</option>
+                        <option value="under-30000">3万以下</option>
+                        <option value="30000-50000">3-5万</option>
+                        <option value="50000-100000">5-10万</option>
+                        <option value="100000-200000">10-20万</option>
+                        <option value="over-200000">20万以上</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 医疗信息标签页 -->
+        <div id="medical" class="tab-content">
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">既往病史</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>脑卒中</span>
+                            <input type="checkbox" name="medical_history" value="stroke" class="w-5 h-5 text-blue-600">
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>糖尿病</span>
+                            <input type="checkbox" name="medical_history" value="diabetes" class="w-5 h-5 text-blue-600">
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>慢性肾病</span>
+                            <input type="checkbox" name="medical_history" value="chronic_kidney_disease" class="w-5 h-5 text-blue-600">
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>心肌梗死</span>
+                            <input type="checkbox" name="medical_history" value="myocardial_infarction" class="w-5 h-5 text-blue-600">
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>心绞痛</span>
+                            <input type="checkbox" name="medical_history" value="angina" class="w-5 h-5 text-blue-600">
+                        </label>
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl">
+                            <span>房颤</span>
+                            <input type="checkbox" name="medical_history" value="atrial_fibrillation" class="w-5 h-5 text-blue-600">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">实验室检查</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">空腹血糖 (mmol/L)</label>
+                            <input type="number" id="fasting_glucose" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="30">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">甘油三酯 (mmol/L)</label>
+                            <input type="number" id="triglycerides" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="20">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">总胆固醇 (mmol/L)</label>
+                            <input type="number" id="total_cholesterol" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="20">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">肌酐 (μmol/L)</label>
+                            <input type="number" id="creatinine" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" max="1000">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">HDL-C (mmol/L)</label>
+                            <input type="number" id="hdl_c" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="10">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">LDL-C (mmol/L)</label>
+                            <input type="number" id="ldl_c" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">认知评估</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">第4年量表得分</label>
+                            <input type="number" id="year4_score" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" max="30">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">痴呆诊断</label>
+                            <select id="dementia_diagnosis" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="false">否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">生物标志物</label>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">p-tau217 (pg/mL)</label>
+                        <input type="number" id="p_tau217" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" max="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 生活方式标签页 -->
+        <div id="lifestyle" class="tab-content">
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">吸烟情况</label>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">每日吸烟量 (支)</label>
+                        <input type="number" id="smoking" class="w-full px-4 py-3 border border-gray-300 rounded-xl" min="0" max="100" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">饮酒情况 (每周)</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">啤酒 (份)</label>
+                            <input type="number" id="alcohol_beer" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" max="50">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">白酒 (份)</label>
+                            <input type="number" id="alcohol_wine" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" max="50">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">鸡尾酒 (份)</label>
+                            <input type="number" id="alcohol_spirits" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" max="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">运动情况</label>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">每周运动时长 (小时)</label>
+                        <input type="number" id="exercise_hours" class="w-full px-4 py-3 border border-gray-300 rounded-xl" min="0" max="168" step="0.5" placeholder="5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">血压记录</label>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">最近血压记录</span>
+                            <button onclick="addBPRecord()" class="text-blue-600 text-sm">
+                                <i class="fas fa-plus mr-1"></i>添加记录
+                            </button>
+                        </div>
+                        <div id="bp-records" class="space-y-2">
+                            <!-- 血压记录将动态添加到这里 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <div class="flex space-x-3">
+            <button onclick="loadSampleData()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-medium">
+                <i class="fas fa-download mr-2"></i>加载示例数据
+            </button>
+            <button onclick="clearAllData()" class="flex-1 bg-red-100 text-red-700 py-3 rounded-xl font-medium">
+                <i class="fas fa-trash mr-2"></i>清空数据
+            </button>
+            <button onclick="saveProfile()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">
+                <i class="fas fa-save mr-2"></i>保存
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // 标签页切换
+        function switchTab(tabName) {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 移除所有标签按钮的激活状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // 显示选中的标签页
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活选中的标签按钮
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            activeBtn.classList.add('border-blue-600', 'text-blue-600');
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+        }
+
+        // BMI 自动计算
+        document.getElementById('height').addEventListener('input', calculateBMI);
+        document.getElementById('weight').addEventListener('input', calculateBMI);
+
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            
+            if (height && weight) {
+                const bmi = (weight / Math.pow(height / 100, 2)).toFixed(1);
+                document.getElementById('bmi').value = bmi;
+            }
+        }
+
+        // 添加血压记录
+        function addBPRecord() {
+            const container = document.getElementById('bp-records');
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'flex space-x-2 items-center p-3 border border-gray-200 rounded-lg';
+            recordDiv.innerHTML = `
+                <input type="date" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input type="number" placeholder="SBP" class="w-20 px-2 py-2 border border-gray-300 rounded-lg text-sm" min="50" max="250">
+                <input type="number" placeholder="DBP" class="w-20 px-2 py-2 border border-gray-300 rounded-lg text-sm" min="30" max="150">
+                <button onclick="this.parentElement.remove()" class="text-red-500">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(recordDiv);
+        }
+
+        // 加载示例数据
+        async function loadSampleData() {
+            try {
+                const response = await fetch('./assets/sample-patient.json');
+                const data = await response.json();
+                
+                // 填充基本信息
+                document.getElementById('age').value = data.demographics.age;
+                document.querySelector(`input[name="gender"][value="${data.demographics.gender}"]`).checked = true;
+                document.getElementById('education').value = data.demographics.education;
+                document.getElementById('height').value = data.demographics.height;
+                document.getElementById('weight').value = data.demographics.weight;
+                document.getElementById('marital_status').value = data.demographics.marital_status;
+                document.getElementById('income').value = data.demographics.income;
+                calculateBMI();
+                
+                // 填充医疗信息
+                Object.keys(data.medical_history).forEach(key => {
+                    const checkbox = document.querySelector(`input[name="medical_history"][value="${key}"]`);
+                    if (checkbox) {
+                        checkbox.checked = data.medical_history[key];
+                    }
+                });
+                
+                document.getElementById('fasting_glucose').value = data.lab_values.fasting_glucose;
+                document.getElementById('triglycerides').value = data.lab_values.triglycerides;
+                document.getElementById('total_cholesterol').value = data.lab_values.total_cholesterol;
+                document.getElementById('creatinine').value = data.lab_values.creatinine;
+                document.getElementById('hdl_c').value = data.lab_values.hdl_c;
+                document.getElementById('ldl_c').value = data.lab_values.ldl_c;
+                document.getElementById('year4_score').value = data.cognitive.year4_score;
+                document.getElementById('dementia_diagnosis').value = data.cognitive.dementia_diagnosis.toString();
+                document.getElementById('p_tau217').value = data.biomarkers.p_tau217;
+                
+                // 填充生活方式
+                document.getElementById('smoking').value = data.lifestyle.smoking;
+                document.getElementById('alcohol_beer').value = data.lifestyle.alcohol_beer;
+                document.getElementById('alcohol_wine').value = data.lifestyle.alcohol_wine;
+                document.getElementById('alcohol_spirits').value = data.lifestyle.alcohol_spirits;
+                document.getElementById('exercise_hours').value = data.lifestyle.exercise_hours;
+                
+                // 填充血压记录
+                const bpContainer = document.getElementById('bp-records');
+                bpContainer.innerHTML = '';
+                data.blood_pressure.forEach(bp => {
+                    addBPRecord();
+                    const records = bpContainer.children;
+                    const lastRecord = records[records.length - 1];
+                    lastRecord.children[0].value = bp.date;
+                    lastRecord.children[1].value = bp.sbp;
+                    lastRecord.children[2].value = bp.dbp;
+                });
+                
+                showToast('示例数据加载成功！');
+            } catch (error) {
+                showToast('加载示例数据失败！');
+                console.error('Error loading sample data:', error);
+            }
+        }
+
+        // 清空所有数据
+        function clearAllData() {
+            if (confirm('确定要清空所有数据吗？')) {
+                document.querySelectorAll('input, select').forEach(element => {
+                    if (element.type === 'checkbox' || element.type === 'radio') {
+                        element.checked = false;
+                    } else {
+                        element.value = '';
+                    }
+                });
+                document.getElementById('bp-records').innerHTML = '';
+                showToast('数据已清空！');
+            }
+        }
+
+        // 保存数据
+        function saveProfile() {
+            const profileData = {
+                demographics: {
+                    age: parseInt(document.getElementById('age').value),
+                    gender: document.querySelector('input[name="gender"]:checked')?.value,
+                    education: document.getElementById('education').value,
+                    height: parseInt(document.getElementById('height').value),
+                    weight: parseInt(document.getElementById('weight').value),
+                    bmi: parseFloat(document.getElementById('bmi').value),
+                    marital_status: document.getElementById('marital_status').value,
+                    income: document.getElementById('income').value
+                },
+                lifestyle: {
+                    smoking: parseInt(document.getElementById('smoking').value) || 0,
+                    alcohol_beer: parseInt(document.getElementById('alcohol_beer').value) || 0,
+                    alcohol_wine: parseInt(document.getElementById('alcohol_wine').value) || 0,
+                    alcohol_spirits: parseInt(document.getElementById('alcohol_spirits').value) || 0,
+                    exercise_hours: parseFloat(document.getElementById('exercise_hours').value) || 0
+                },
+                medical_history: {},
+                lab_values: {
+                    fasting_glucose: parseFloat(document.getElementById('fasting_glucose').value) || 0,
+                    triglycerides: parseFloat(document.getElementById('triglycerides').value) || 0,
+                    total_cholesterol: parseFloat(document.getElementById('total_cholesterol').value) || 0,
+                    creatinine: parseInt(document.getElementById('creatinine').value) || 0,
+                    hdl_c: parseFloat(document.getElementById('hdl_c').value) || 0,
+                    ldl_c: parseFloat(document.getElementById('ldl_c').value) || 0
+                },
+                cognitive: {
+                    year4_score: parseInt(document.getElementById('year4_score').value) || 0,
+                    dementia_diagnosis: document.getElementById('dementia_diagnosis').value === 'true'
+                },
+                biomarkers: {
+                    p_tau217: parseFloat(document.getElementById('p_tau217').value) || 0
+                },
+                blood_pressure: []
+            };
+
+            // 收集医疗史
+            document.querySelectorAll('input[name="medical_history"]:checked').forEach(checkbox => {
+                profileData.medical_history[checkbox.value] = true;
+            });
+
+            // 收集血压记录
+            document.querySelectorAll('#bp-records > div').forEach(record => {
+                const date = record.children[0].value;
+                const sbp = parseInt(record.children[1].value);
+                const dbp = parseInt(record.children[2].value);
+                if (date && sbp && dbp) {
+                    profileData.blood_pressure.push({ date, sbp, dbp });
+                }
+            });
+
+            // 保存到本地存储
+            localStorage.setItem('patientProfile', JSON.stringify(profileData));
+            showToast('数据保存成功！');
+        }
+
+        // 显示提示信息
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 页面加载时尝试加载已保存的数据
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedData = localStorage.getItem('patientProfile');
+            if (savedData) {
+                // 可以在这里加载已保存的数据
+                console.log('Found saved profile data');
+            }
+        });
+    </script>
+</body>
+</html>

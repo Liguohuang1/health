@@ -1,0 +1,66 @@
+<view class="container">
+  <!-- 头部介绍 -->
+  <view class="card">
+    <view class="header">
+      <view class="icon-brain">🧠</view>
+      <view class="title">智能健康管理</view>
+      <view class="subtitle">痴呆风险预测与个体化血压管理</view>
+    </view>
+    
+    <view class="features">
+      <view class="feature-item">✨ 基于AI的智能风险预测</view>
+      <view class="feature-item">💡 个性化血压管理</view>
+      <view class="feature-item">🎯 强化降压适宜性评估</view>
+      <view class="feature-item">📊 24小时健康监测</view>
+    </view>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-card">
+    <view class="stat-item">
+      <view class="stat-number">85%</view>
+      <view class="stat-label">预测准确率</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-number">1.2M+</view>
+      <view class="stat-label">用户数据</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-number">24/7</view>
+      <view class="stat-label">智能监测</view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="btn-primary" bindtap="openWebView">
+    🚀 进入健康管理系统
+  </view>
+
+  <!-- 功能预览 -->
+  <view class="card">
+    <view class="preview-title">核心功能预览</view>
+    <view class="preview-grid">
+      <view class="preview-item">
+        <view class="preview-icon" style="background: #fee2e2; color: #dc2626;">📊</view>
+        <view class="preview-text">风险预测</view>
+      </view>
+      <view class="preview-item">
+        <view class="preview-icon" style="background: #dbeafe; color: #2563eb;">💓</view>
+        <view class="preview-text">血压管理</view>
+      </view>
+      <view class="preview-item">
+        <view class="preview-icon" style="background: #dcfce7; color: #16a34a;">⚕️</view>
+        <view class="preview-text">治疗适宜性</view>
+      </view>
+      <view class="preview-item">
+        <view class="preview-icon" style="background: #f3e8ff; color: #9333ea;">💬</view>
+        <view class="preview-text">智能问答</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 免责声明 -->
+  <view class="disclaimer">
+    ⚠️ 本原型仅用于科研产品演示，非医疗诊断或治疗建议
+  </view>
+</view>

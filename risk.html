@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>痴呆风险预测 - 痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .risk-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .risk-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <div class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <button onclick="parent.loadPageInFrame('home.html')" class="flex items-center text-gray-600">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>返回</span>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">痴呆风险预测</h1>
+        <button onclick="showModelInfo()" class="text-blue-600">
+            <i class="fas fa-info-circle"></i>
+        </button>
+    </div>
+
+    <!-- 风险等级指示器 -->
+    <div class="px-6 py-4">
+        <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold">当前风险等级</h2>
+                    <p class="text-sm opacity-90">基于多维度数据分析</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold" id="riskLevel">中等</div>
+                    <div class="text-sm opacity-90">风险</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 风险预测卡片 -->
+    <div class="px-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">风险预测结果</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="risk-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600" id="risk1Year">12%</div>
+                    <div class="text-sm text-gray-600">1年风险</div>
+                </div>
+            </div>
+            <div class="risk-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="risk2Year">19%</div>
+                    <div class="text-sm text-gray-600">2年风险</div>
+                </div>
+            </div>
+            <div class="risk-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600" id="risk5Year">36%</div>
+                    <div class="text-sm text-gray-600">5年风险</div>
+                </div>
+            </div>
+            <div class="risk-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600" id="risk10Year">58%</div>
+                    <div class="text-sm text-gray-600">10年风险</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 风险趋势图表 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">风险趋势分析</h3>
+            <div class="h-64">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 风险因素分析 -->
+    <div class="px-6 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">主要风险因素</h3>
+            <div class="space-y-3" id="riskFactors">
+                <!-- 风险因素将动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 建议措施 -->
+    <div class="px-6 mb-6">
+        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">
+                <i class="fas fa-lightbulb mr-2"></i>个性化建议
+            </h3>
+            <div class="space-y-2 text-sm text-blue-700">
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle mr-2 mt-1 text-blue-600"></i>
+                    <span>定期监测血压，保持目标范围内</span>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle mr-2 mt-1 text-blue-600"></i>
+                    <span>加强认知训练，保持大脑活跃</span>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle mr-2 mt-1 text-blue-600"></i>
+                    <span>控制血糖，定期检查糖尿病指标</span>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-check-circle mr-2 mt-1 text-blue-600"></i>
+                    <span>保持健康生活方式，适量运动</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模型说明模态框 -->
+    <div id="modelModal" class="modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">模型说明</h3>
+                <button onclick="hideModelInfo()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm text-gray-700">
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">预测模型</h4>
+                    <p>本系统采用基于机器学习的多维度风险预测模型，结合以下数据：</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>人口学特征（年龄、性别、教育水平等）</li>
+                        <li>血压轨迹与变异性分析</li>
+                        <li>生物标志物（p-tau217等）</li>
+                        <li>既往病史与实验室检查</li>
+                        <li>生活方式因素</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">模型性能</h4>
+                    <p>模型在验证集上的表现：</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>准确率：85.2%</li>
+                        <li>敏感性：82.1%</li>
+                        <li>特异性：87.3%</li>
+                        <li>AUC：0.89</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <h4 class="font-semibold text-yellow-800 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>重要声明
+                    </h4>
+                    <p class="text-yellow-700">
+                        本预测结果仅供科研参考，不能替代专业医疗诊断。任何医疗决策应咨询专业医生。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button onclick="hideModelInfo()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部安全区域 -->
+    <div class="h-20"></div>
+
+    <script>
+        let riskChart;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRiskData();
+            initRiskChart();
+        });
+
+        // 加载风险数据
+        async function loadRiskData() {
+            try {
+                const response = await fetch('./assets/sample-ite.json');
+                const data = await response.json();
+                
+                // 更新风险数值
+                document.getElementById('risk1Year').textContent = Math.round(data.risk.y1 * 100) + '%';
+                document.getElementById('risk2Year').textContent = Math.round(data.risk.y2 * 100) + '%';
+                document.getElementById('risk5Year').textContent = Math.round(data.risk.y5 * 100) + '%';
+                document.getElementById('risk10Year').textContent = Math.round(data.risk.y10 * 100) + '%';
+                
+                // 更新风险等级
+                const maxRisk = Math.max(data.risk.y1, data.risk.y2, data.risk.y5, data.risk.y10);
+                let riskLevel = '低';
+                if (maxRisk > 0.5) riskLevel = '高';
+                else if (maxRisk > 0.2) riskLevel = '中等';
+                document.getElementById('riskLevel').textContent = riskLevel;
+                
+                // 更新风险因素
+                updateRiskFactors(data.shap_top);
+                
+                // 更新图表
+                updateRiskChart(data.risk);
+                
+            } catch (error) {
+                console.error('Error loading risk data:', error);
+                showMockData();
+            }
+        }
+
+        // 显示模拟数据
+        function showMockData() {
+            document.getElementById('risk1Year').textContent = '12%';
+            document.getElementById('risk2Year').textContent = '19%';
+            document.getElementById('risk5Year').textContent = '36%';
+            document.getElementById('risk10Year').textContent = '58%';
+            document.getElementById('riskLevel').textContent = '中等';
+            
+            // 模拟风险因素
+            const mockFactors = [
+                { feature: 'p-tau217', impact: '+0.21', description: '血浆磷酸化tau蛋白217' },
+                { feature: 'DBP轨迹变异度', impact: '+0.17', description: '舒张压变异性' },
+                { feature: '年龄', impact: '+0.13', description: '年龄因素' },
+                { feature: '糖尿病', impact: '+0.08', description: '糖尿病史' }
+            ];
+            updateRiskFactors(mockFactors);
+        }
+
+        // 更新风险因素显示
+        function updateRiskFactors(factors) {
+            const container = document.getElementById('riskFactors');
+            container.innerHTML = '';
+            
+            factors.forEach((factor, index) => {
+                const factorDiv = document.createElement('div');
+                factorDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                factorDiv.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">${factor.feature}</div>
+                        <div class="text-sm text-gray-600">${factor.description}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-red-600">${factor.impact}</div>
+                        <div class="text-xs text-gray-500">影响度</div>
+                    </div>
+                `;
+                container.appendChild(factorDiv);
+            });
+        }
+
+        // 初始化风险图表
+        function initRiskChart() {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            riskChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1年', '2年', '3年', '4年', '5年', '6年', '7年', '8年', '9年', '10年'],
+                    datasets: [{
+                        label: '痴呆风险',
+                        data: [12, 19, 25, 30, 36, 42, 47, 52, 55, 58],
+                        borderColor: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新风险图表
+        function updateRiskChart(riskData) {
+            if (riskChart) {
+                const riskValues = [
+                    riskData.y1 * 100,
+                    riskData.y2 * 100,
+                    riskData.y5 * 100 * 0.5, // 插值
+                    riskData.y5 * 100 * 0.7,
+                    riskData.y5 * 100,
+                    riskData.y10 * 100 * 0.6,
+                    riskData.y10 * 100 * 0.7,
+                    riskData.y10 * 100 * 0.8,
+                    riskData.y10 * 100 * 0.9,
+                    riskData.y10 * 100
+                ];
+                
+                riskChart.data.datasets[0].data = riskValues;
+                riskChart.update();
+            }
+        }
+
+        // 显示模型信息
+        function showModelInfo() {
+            document.getElementById('modelModal').classList.add('show');
+        }
+
+        // 隐藏模型信息
+        function hideModelInfo() {
+            document.getElementById('modelModal').classList.remove('show');
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('modelModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideModelInfo();
+            }
+        });
+    </script>
+</body>
+</html>

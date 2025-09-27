@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>痴呆风险预测与个体化血压管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            height: 80px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 1000;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tab-item.active {
+            background: #2563EB;
+            color: white;
+        }
+        
+        .content-area {
+            padding-bottom: 100px;
+        }
+        
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <!-- 主内容区域 -->
+        <div id="contentArea" class="content-area">
+            <!-- 首页内容 -->
+            <div id="homePage" class="page">
+                <!-- 顶部横幅 -->
+                <div class="hero-bg text-white p-6 pb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h1 class="text-2xl font-bold">智能健康管理</h1>
+                            <p class="text-blue-100 text-sm">痴呆风险预测与个体化血压管理</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-brain text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white bg-opacity-10 rounded-2xl p-4 backdrop-blur-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm opacity-90">欢迎使用AI驱动的健康管理平台</p>
+                                <p class="text-xs opacity-75 mt-1">基于最新医学研究，为您提供个性化健康建议</p>
+                            </div>
+                            <i class="fas fa-arrow-right text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速统计 -->
+                <div class="px-6 -mt-4 mb-6">
+                    <div class="bg-white rounded-2xl p-4 shadow-lg">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">85%</div>
+                                <div class="text-xs text-gray-600">预测准确率</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">1.2M+</div>
+                                <div class="text-xs text-gray-600">用户数据</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600">24/7</div>
+                                <div class="text-xs text-gray-600">智能监测</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 核心功能 -->
+                <div class="px-6 mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">核心功能</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="showPage('risk')">
+                            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-chart-pie text-red-600 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 mb-1">痴呆风险预测</h3>
+                            <p class="text-xs text-gray-600 mb-3">基于多维度数据预测1-10年痴呆风险</p>
+                            <div class="flex items-center text-xs text-red-600">
+                                <span>查看详情</span>
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </div>
+                        </div>
+
+                        <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="showPage('bp')">
+                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-heart-pulse text-blue-600 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 mb-1">血压管理</h3>
+                            <p class="text-xs text-gray-600 mb-3">个性化血压目标与轨迹监测</p>
+                            <div class="flex items-center text-xs text-blue-600">
+                                <span>查看详情</span>
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </div>
+                        </div>
+
+                        <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="showPage('treatment')">
+                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-sliders text-green-600 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 mb-1">治疗适宜性</h3>
+                            <p class="text-xs text-gray-600 mb-3">强化降压获益评估与建议</p>
+                            <div class="flex items-center text-xs text-green-600">
+                                <span>查看详情</span>
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </div>
+                        </div>
+
+                        <div class="feature-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onclick="showPage('chat')">
+                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-3">
+                                <i class="fas fa-comments text-purple-600 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 mb-1">智能问答</h3>
+                            <p class="text-xs text-gray-600 mb-3">AI健康顾问24小时在线</p>
+                            <div class="flex items-center text-xs text-purple-600">
+                                <span>开始对话</span>
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 风险预测页面 -->
+            <div id="riskPage" class="page hidden">
+                <div class="p-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-chart-pie text-3xl text-red-600"></i>
+                            </div>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">痴呆风险预测</h1>
+                            <p class="text-gray-600">基于AI分析的个体化风险评估</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="text-center p-4 bg-red-50 rounded-xl">
+                                <div class="text-3xl font-bold text-red-600 mb-1">12%</div>
+                                <div class="text-sm text-gray-600">1年风险</div>
+                            </div>
+                            <div class="text-center p-4 bg-orange-50 rounded-xl">
+                                <div class="text-3xl font-bold text-orange-600 mb-1">36%</div>
+                                <div class="text-sm text-gray-600">5年风险</div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container mb-6">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <h3 class="font-semibold text-gray-800">主要影响因素</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm">p-tau217蛋白</span>
+                                    <span class="text-sm font-semibold text-red-600">+21%</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm">血压变异性</span>
+                                    <span class="text-sm font-semibold text-orange-600">+17%</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm">年龄因素</span>
+                                    <span class="text-sm font-semibold text-yellow-600">+13%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 血压管理页面 -->
+            <div id="bpPage" class="page hidden">
+                <div class="p-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-heart-pulse text-3xl text-blue-600"></i>
+                            </div>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">血压管理</h1>
+                            <p class="text-gray-600">个性化血压监测与管理</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-xl p-4 mb-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-700 mb-1">118-128 / 68-74</div>
+                                <div class="text-sm text-blue-600">目标血压区间 (mmHg)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container mb-6">
+                            <canvas id="bpChart"></canvas>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <div class="text-lg font-bold text-green-600">67%</div>
+                                <div class="text-xs text-gray-600">达标率</div>
+                            </div>
+                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                                <div class="text-lg font-bold text-yellow-600">2.3</div>
+                                <div class="text-xs text-gray-600">变异系数</div>
+                            </div>
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <div class="text-lg font-bold text-blue-600">7天</div>
+                                <div class="text-xs text-gray-600">监测频率</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 治疗适宜性页面 -->
+            <div id="treatmentPage" class="page hidden">
+                <div class="p-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-lg">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-sliders text-3xl text-green-600"></i>
+                            </div>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">强化降压适宜性</h1>
+                            <p class="text-gray-600">基于ITE分析的个体化评估</p>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-xl p-6 mb-6">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-green-700 mb-2">高获益</div>
+                                <div class="text-sm text-green-600 mb-4">强化降压治疗适宜性评级</div>
+                                <div class="w-full bg-green-200 rounded-full h-3">
+                                    <div class="bg-green-600 h-3 rounded-full" style="width: 78%"></div>
+                                </div>
+                                <div class="text-xs text-green-600 mt-2">获益评分: 78/100</div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-2">治疗建议</h3>
+                                <div class="space-y-2 text-sm text-gray-600">
+                                    <div>• 推荐启动强化降压治疗</div>
+                                    <div>• 目标血压: &lt;130/80 mmHg</div>
+                                    <div>• 建议联合用药方案</div>
+                                    <div>• 密切监测不良反应</div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-2">预期获益</h3>
+                                <div class="space-y-2 text-sm text-gray-600">
+                                    <div>• 痴呆风险降低约23%</div>
+                                    <div>• 心血管事件风险降低约18%</div>
+                                    <div>• 认知功能改善</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 智能问答页面 -->
+            <div id="chatPage" class="page hidden">
+                <div class="p-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-lg">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-comments text-3xl text-purple-600"></i>
+                            </div>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">智能健康助手</h1>
+                            <p class="text-gray-600">AI驱动的24小时健康咨询</p>
+                        </div>
+                        
+                        <div class="chat-container bg-gray-50 rounded-xl p-4 mb-4" style="height: 300px; overflow-y: auto;">
+                            <div class="chat-message ai mb-4">
+                                <div class="bg-purple-100 rounded-lg p-3 text-sm">
+                                    您好！我是您的AI健康助手。我可以帮您解答关于痴呆风险预测、血压管理和治疗适宜性的问题。请问有什么可以帮助您的吗？
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="quick-questions grid grid-cols-2 gap-2 mb-4">
+                            <button class="bg-purple-50 text-purple-700 rounded-lg p-3 text-xs" onclick="askQuestion('我的血压变异性高怎么办？')">
+                                血压变异性高怎么办？
+                            </button>
+                            <button class="bg-purple-50 text-purple-700 rounded-lg p-3 text-xs" onclick="askQuestion('如何降低痴呆风险？')">
+                                如何降低痴呆风险？
+                            </button>
+                            <button class="bg-purple-50 text-purple-700 rounded-lg p-3 text-xs" onclick="askQuestion('强化降压安全吗？')">
+                                强化降压安全吗？
+                            </button>
+                            <button class="bg-purple-50 text-purple-700 rounded-lg p-3 text-xs" onclick="askQuestion('需要多久复查？')">
+                                需要多久复查？
+                            </button>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="输入您的问题..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <button onclick="sendMessage()" class="bg-purple-600 text-white rounded-lg px-4 py-2 text-sm">
+                                发送
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航栏 -->
+        <div class="tab-bar">
+            <div class="tab-item active" onclick="showPage('home')">
+                <i class="fas fa-house"></i>
+                <span style="font-size: 12px;">首页</span>
+            </div>
+            <div class="tab-item" onclick="showPage('risk')">
+                <i class="fas fa-chart-pie"></i>
+                <span style="font-size: 12px;">风险</span>
+            </div>
+            <div class="tab-item" onclick="showPage('bp')">
+                <i class="fas fa-heart-pulse"></i>
+                <span style="font-size: 12px;">血压</span>
+            </div>
+            <div class="tab-item" onclick="showPage('treatment')">
+                <i class="fas fa-sliders"></i>
+                <span style="font-size: 12px;">适宜性</span>
+            </div>
+            <div class="tab-item" onclick="showPage('chat')">
+                <i class="fas fa-comments"></i>
+                <span style="font-size: 12px;">聊天</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 免责声明浮窗 -->
+    <div style="position: fixed; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.9); color: white; padding: 8px 12px; border-radius: 6px; font-size: 11px; max-width: 200px; z-index: 1001;">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        本原型仅用于科研产品演示，非医疗诊断或治疗建议
+    </div>
+
+    <script>
+        // 页面切换函数
+        function showPage(pageId) {
+            // 隐藏所有页面
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.add('hidden'));
+            
+            // 显示目标页面
+            document.getElementById(pageId + 'Page').classList.remove('hidden');
+            
+            // 更新导航栏状态
+            const tabs = document.querySelectorAll('.tab-item');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.tab-item').classList.add('active');
+            
+            // 初始化页面特定功能
+            if (pageId === 'risk') {
+                initRiskChart();
+            } else if (pageId === 'bp') {
+                initBpChart();
+            }
+        }
+
+        // 初始化风险预测图表
+        function initRiskChart() {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['低风险', '中风险', '高风险'],
+                    datasets: [{
+                        data: [52, 36, 12],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化血压图表
+        function initBpChart() {
+            const ctx = document.getElementById('bpChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '收缩压',
+                        data: [125, 128, 122, 135, 130, 126],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: '舒张压',
+                        data: [78, 80, 75, 82, 79, 77],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 60,
+                            max: 150
+                        }
+                    }
+                }
+            });
+        }
+
+        // 智能问答功能
+        function askQuestion(question) {
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatContainer = document.querySelector('.chat-container');
+            
+            // 添加用户消息
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chat-message user mb-4 text-right';
+            userMessage.innerHTML = `<div class="bg-blue-100 rounded-lg p-3 text-sm inline-block max-w-xs">${message}</div>`;
+            chatContainer.appendChild(userMessage);
+
+            // 模拟AI回复
+            setTimeout(() => {
+                const aiMessage = document.createElement('div');
+                aiMessage.className = 'chat-message ai mb-4';
+                aiMessage.innerHTML = `<div class="bg-purple-100 rounded-lg p-3 text-sm">${getAIResponse(message)}</div>`;
+                chatContainer.appendChild(aiMessage);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1000);
+
+            input.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function getAIResponse(question) {
+            const responses = {
+                '我的血压变异性高怎么办？': '血压变异性高可能增加痴呆风险。建议：1)规律作息，避免熬夜 2)控制情绪波动 3)定期监测血压 4)考虑调整降压药物。请咨询医生制定个性化方案。',
+                '如何降低痴呆风险？': '降低痴呆风险的方法包括：1)控制血压在目标范围 2)保持规律运动 3)健康饮食 4)充足睡眠 5)社交活动 6)智力训练。我们的系统可以为您提供个性化建议。',
+                '强化降压安全吗？': '根据您的ITE分析，您属于强化降压高获益人群。在医生指导下，强化降压通常是安全的，但需要密切监测血压和可能的不良反应。',
+                '需要多久复查？': '建议每周监测血压2-3次，每月复查一次血压变异性。如有异常，应及时就医。我们的系统会根据您的数据提供个性化的复查建议。'
+            };
+            
+            return responses[question] || '感谢您的提问。这是一个很好的健康相关问题。建议您咨询专业医生获得更准确的指导。我们的系统主要提供风险预测和管理建议，不能替代专业医疗诊断。';
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('痴呆风险预测与个体化血压管理系统已加载');
+            
+            // 支持回车发送消息
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
